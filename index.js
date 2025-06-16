@@ -56,7 +56,8 @@ module.exports = async function handler(req, res) {
       return res.json({ 
         message: 'API de control de personal Delizia funcionando correctamente',
         timestamp: new Date().toISOString(),
-        version: '1.0.1',
+        version: '1.0.2',
+        deployment: 'latest',
         env: {
           nodeEnv: process.env.NODE_ENV,
           hasMongoUri: !!process.env.MONGODB_URI,
