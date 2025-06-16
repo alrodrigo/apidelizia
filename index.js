@@ -54,8 +54,9 @@ module.exports = async function handler(req, res) {
     // Ruta raíz - test
     if (req.method === 'GET' && (!req.url || req.url === '/' || req.url === '')) {
       return res.json({ 
-        message: 'API de control de personal Delizia funcionando',
+        message: 'API de control de personal Delizia funcionando correctamente',
         timestamp: new Date().toISOString(),
+        version: '1.0.1',
         env: {
           nodeEnv: process.env.NODE_ENV,
           hasMongoUri: !!process.env.MONGODB_URI,
