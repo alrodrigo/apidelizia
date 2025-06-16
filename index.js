@@ -70,6 +70,8 @@ module.exports = async function handler(req, res) {
       const { email, password } = req.body;
       
       console.log('Intento de login:', email);
+      console.log('MongoDB URI presente:', !!process.env.MONGODB_URI);
+      console.log('MongoDB URI starts with:', process.env.MONGODB_URI?.substring(0, 20));
 
       // Verificar que tengamos las variables de entorno
       if (!process.env.MONGODB_URI) {
@@ -79,45 +81,64 @@ module.exports = async function handler(req, res) {
         });
       }
 
-      // Conectar a la base de datos
-      await connectToDatabase();
+      try {
+        console.log('Intentando conectar a MongoDB...');
+        // Conectar a la base de datos
+        await connectToDatabase();
+        console.log('Conexión a MongoDB exitosa');
 
-      // Buscar usuario
-      const usuario = await Usuario.findOne({ email: email.toLowerCase() });
-      if (!usuario) {
-        console.log('Usuario no encontrado:', email);
-        return res.status(401).json({ message: 'Credenciales inválidas' });
-      }
-
-      // Verificar contraseña
-      const esValida = await bcryptjs.compare(password, usuario.password);
-      if (!esValida) {
-        console.log('Contraseña incorrecta para:', email);
-        return res.status(401).json({ message: 'Credenciales inválidas' });
-      }
-
-      // Generar token
-      const token = jwt.sign(
-        { 
-          id: usuario._id, 
-          email: usuario.email, 
-          rol: usuario.rol 
-        },
-        process.env.JWT_SECRET || 'fallback_secret',
-        { expiresIn: '24h' }
-      );
-
-      console.log('Login exitoso para:', email);
-      
-      return res.json({
-        token,
-        usuario: {
-          id: usuario._id,
-          nombre: usuario.nombre,
-          email: usuario.email,
-          rol: usuario.rol
+        // Buscar usuario
+        console.log('Buscando usuario:', email);
+        const usuario = await Usuario.findOne({ email: email.toLowerCase() });
+        
+        if (!usuario) {
+          console.log('Usuario no encontrado:', email);
+          return res.status(401).json({ message: 'Credenciales inválidas' });
         }
-      });
+
+        console.log('Usuario encontrado:', usuario.email);
+        
+        // Verificar contraseña
+        const esValida = await bcryptjs.compare(password, usuario.password);
+        console.log('Contraseña válida:', esValida);
+        
+        if (!esValida) {
+          console.log('Contraseña incorrecta para:', email);
+          return res.status(401).json({ message: 'Credenciales inválidas' });
+        }
+
+        // Generar token
+        const token = jwt.sign(
+          { 
+            id: usuario._id, 
+            email: usuario.email, 
+            rol: usuario.rol 
+          },
+          process.env.JWT_SECRET || 'fallback_secret',
+          { expiresIn: '24h' }
+        );
+
+        console.log('Login exitoso para:', email);
+        
+        return res.json({
+          token,
+          usuario: {
+            id: usuario._id,
+            nombre: usuario.nombre,
+            email: usuario.email,
+            rol: usuario.rol
+          }
+        });
+        
+      } catch (mongoError) {
+        console.error('Error específico de MongoDB:', mongoError.message);
+        console.error('Stack de MongoDB:', mongoError.stack);
+        return res.status(500).json({
+          message: 'Error de conexión a la base de datos',
+          error: mongoError.message,
+          mongoUri: process.env.MONGODB_URI ? 'Configurado' : 'No configurado'
+        });
+      }
     }
 
     // Ruta de registro
