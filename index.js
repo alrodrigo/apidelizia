@@ -187,9 +187,11 @@ module.exports = async function handler(req, res) {
 
   } catch (error) {
     console.error('Error en API:', error);
+    console.error('Stack trace:', error.stack);
     return res.status(500).json({ 
       message: 'Error interno del servidor',
-      error: process.env.NODE_ENV === 'development' ? error.message : 'Error interno'
+      error: error.message,
+      stack: error.stack
     });
   }
 };
